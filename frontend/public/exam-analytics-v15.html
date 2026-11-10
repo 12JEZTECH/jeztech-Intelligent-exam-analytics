@@ -1619,7 +1619,39 @@ function loadDB() {
     return db;
   } catch (e) { return JSON.parse(JSON.stringify(DEFAULT_DB)); }
 }
-function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+let _remoteSaveTimer = null;
+function saveDB(db) {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+  clearTimeout(_remoteSaveTimer);
+  _remoteSaveTimer = setTimeout(async () => {
+    const token = localStorage.getItem('jz_token');
+    if (!token) return;
+    try {
+      const response = await fetch('https://jeztech-intelligent-exam-analytics-api.onrender.com/api/v1/legacy/state', {
+        method:'PUT', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+        body:JSON.stringify({payload:db})
+      });
+      if (!response.ok) { const error=await response.json().catch(()=>({})); throw new Error(error.detail||'Cloud save failed'); }
+      localStorage.setItem('jz_last_cloud_save',new Date().toISOString());
+    } catch(error) { console.error('JEZTECH cloud save failed:',error); showToast('Cloud save failed. Check connection before signing out.','error'); }
+  }, 700);
+}
+async function loadSchoolWorkspace() {
+  const token=localStorage.getItem('jz_token'); if(!token) return;
+  const response=await fetch('https://jeztech-intelligent-exam-analytics-api.onrender.com/api/v1/legacy/state',{headers:{Authorization:'Bearer '+token}});
+  if(!response.ok) throw new Error('Could not load the school workspace');
+  const result=await response.json();
+  if(result.payload && typeof result.payload==='object') {
+    DB={...DB,...result.payload};
+  } else {
+    // Never seed a real school's workspace with the sample learners and demo marks.
+    ['users','teachers','students','exams','classes','subjectAssignments','practicals','rooms','clipProjects','parents','disciplineRecords','onlineExams','manualSubmissions'].forEach(key=>DB[key]=[]);
+    DB.marksData={};
+    DB.school={...(DB.school||{}),name:'School workspace'};
+    saveDB(DB);
+  }
+  localStorage.setItem(DB_KEY,JSON.stringify(DB));
+}
 function resetDB() {
   if (!confirm('DANGER: Reset ALL data to defaults? This cannot be undone.')) return;
   localStorage.removeItem(DB_KEY);
@@ -1742,26 +1774,24 @@ function togglePassword() {
   if (pw.type === 'password') { pw.type = 'text'; icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash'); }
   else { pw.type = 'password'; icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
 }
-function handleLogin() {
-  const username = document.getElementById('loginUsername').value.trim();
-  const password = document.getElementById('loginPassword').value.trim();
-  const level = document.getElementById('loginLevel').value;
-  const user = DB.users.find(u => u.username === username && u.password === password);
-  if (!user) { showToast('Invalid credentials. Please try again.', 'error'); return; }
-  if (user.active === false) { showToast('Account deactivated. Contact admin.', 'error'); return; }
-  currentUser = { ...user, selectedLevel: level };
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('appContainer').classList.remove('hidden');
-  document.getElementById('appContainer').classList.add('flex');
-  updateUserUI();
-  applyRolePermissions();
-  initCharts();
-  renderAll();
-  switchTab('dashboard');
-  showToast(`Welcome back, ${user.name}!`);
+async function handleLogin() {
+  const token = localStorage.getItem('jz_token');
+  if (!token) { showToast('Sign in to the JEZTECH application first, then open Full v15 Suite.', 'warn'); return; }
+  try {
+    const response = await fetch('https://jeztech-intelligent-exam-analytics-api.onrender.com/api/v1/me', {headers:{Authorization:'Bearer '+token}});
+    if (!response.ok) throw new Error('Your main application session has expired. Sign in again.');
+    const account = await response.json();
+    currentUser = {id:account.id,username:account.name,name:account.name,role:(account.role||'SCHOOL_ADMIN').toLowerCase(),level:'all',active:true,selectedLevel:document.getElementById('loginLevel').value};
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+    document.getElementById('appContainer').classList.add('flex');
+    updateUserUI(); applyRolePermissions(); initCharts(); renderAll(); switchTab('dashboard');
+    showToast('Connected to the school workspace.');
+  } catch (error) { showToast(error.message || 'Could not connect to the school workspace.', 'error'); }
 }
 function handleLogout() {
   if (!confirm('Sign out?')) return;
+  localStorage.removeItem('jz_token');
   currentUser = null;
   document.getElementById('appContainer').classList.add('hidden');
   document.getElementById('appContainer').classList.remove('flex');
@@ -3987,7 +4017,8 @@ function toggleMobileSidebar() {
 // ============================================
 // INIT
 // ============================================
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  try { await loadSchoolWorkspace(); } catch(error) { console.error(error); showToast('Cloud workspace could not be loaded. Changes may remain local only.','error'); }
   console.log('🎓 Jeztech Exam Analytics v15.0 loaded');
   console.log('📊 Database:', DB.students.length, 'students,', DB.teachers.length, 'teachers,', DB.exams.length, 'exams');
   console.log('🏫 Rooms:', DB.rooms.length, '| Parents:', DB.parents.length, '| Discipline records:', (DB.disciplineRecords || []).length);
