@@ -1,8 +1,10 @@
 services:
   - type: web
-    name: jeztech-academic-api
+    name: jeztech-intelligent-exam-analytics-api
     runtime: docker
+    plan: free
     dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: APP_ENV
@@ -10,6 +12,18 @@ services:
       - key: APP_SECRET
         generateValue: true
       - key: DATABASE_URL
-        sync: false
+        value: sqlite:///./jeztech.db
       - key: CORS_ORIGINS
-        sync: false
+        value: https://jeztech-intelligent-exam-analytics.onrender.com
+  - type: web
+    name: jeztech-intelligent-exam-analytics
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://jeztech-intelligent-exam-analytics-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
