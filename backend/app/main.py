@@ -28,7 +28,7 @@ class ExamQuestion(Base):
 class Attempt(Base):
  __tablename__="attempts"; id:Mapped[str]=mapped_column(String(36),primary_key=True,default=uid); exam_id:Mapped[str]=mapped_column(ForeignKey("exams.id")); learner_id:Mapped[str]=mapped_column(ForeignKey("learners.id")); school_id:Mapped[str]=mapped_column(ForeignKey("schools.id")); status:Mapped[str]=mapped_column(String(30),default="IN_PROGRESS"); score:Mapped[float]=mapped_column(Float,default=0); maximum:Mapped[float]=mapped_column(Float,default=0)
 class Answer(Base):
- __tablename__="answers"; id:Mapped[str]=mapped_column(String(36),primary_key=True,default=uid); attempt_id:Mapped[str]=mapped_column(ForeignKey("attempts.id")); question_id:Mapped[str]=mapped_column(ForeignKey("questions.id")); response:Mapped[dict]=mapped_column(JSON); awarded:Mapped[float|None]=mapped_column(Float,nullable=True)
+ __tablename__="answers"; id:Mapped[str]=mapped_column(String(36),primary_key=True,default=uid); attempt_id:Mapped[str]=mapped_column(ForeignKey("attempts.id")); question_id:Mapped[str]=mapped_column(ForeignKey("questions.id")); response:Mapped[dict]=mapped_column(JSON); awarded:Mapped[float]=mapped_column(Float,nullable=True)
 class Assignment(Base):
  __tablename__="assignments"; id:Mapped[str]=mapped_column(String(36),primary_key=True,default=uid); school_id:Mapped[str]=mapped_column(ForeignKey("schools.id")); title:Mapped[str]=mapped_column(String(200)); category:Mapped[str]=mapped_column(String(30)); description:Mapped[str]=mapped_column(Text,default="")
 class Message(Base):
