@@ -7,3 +7,5 @@ CREATE TABLE IF NOT EXISTS exams(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),s
 CREATE TABLE IF NOT EXISTS questions(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),curriculum TEXT NOT NULL,subject TEXT NOT NULL,topic TEXT,kind TEXT NOT NULL,prompt TEXT NOT NULL,options JSONB,answer_key JSONB,marks NUMERIC NOT NULL,approved BOOLEAN NOT NULL DEFAULT FALSE);
 CREATE TABLE IF NOT EXISTS attempts(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),exam_id UUID NOT NULL REFERENCES exams(id),learner_id UUID NOT NULL REFERENCES learners(id),status TEXT NOT NULL DEFAULT 'IN_PROGRESS',score NUMERIC,maximum NUMERIC);
 CREATE TABLE IF NOT EXISTS assignments(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),title TEXT NOT NULL,category TEXT NOT NULL,description TEXT);
+
+CREATE TABLE IF NOT EXISTS legacy_states(school_id UUID PRIMARY KEY REFERENCES schools(id) ON DELETE CASCADE,payload JSONB NOT NULL DEFAULT '{}'::jsonb,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
