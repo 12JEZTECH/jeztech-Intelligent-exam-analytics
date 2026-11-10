@@ -1,4 +1,4 @@
-import os,csv,io,uuid
+import os,csv,io,uuid,datetime
 from fastapi import FastAPI,Depends,HTTPException,UploadFile,File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -33,6 +33,8 @@ class Assignment(Base):
  __tablename__="assignments"; id:Mapped[str]=mapped_column(String(36),primary_key=True,default=uid); school_id:Mapped[str]=mapped_column(ForeignKey("schools.id")); title:Mapped[str]=mapped_column(String(200)); category:Mapped[str]=mapped_column(String(30)); description:Mapped[str]=mapped_column(Text,default="")
 class Message(Base):
  __tablename__="messages"; id:Mapped[str]=mapped_column(String(36),primary_key=True,default=uid); school_id:Mapped[str]=mapped_column(ForeignKey("schools.id")); channel:Mapped[str]=mapped_column(String(20)); recipient:Mapped[str]=mapped_column(String(80)); body:Mapped[str]=mapped_column(Text); status:Mapped[str]=mapped_column(String(20),default="QUEUED")
+class LegacyState(Base):
+ __tablename__="legacy_states"; school_id:Mapped[str]=mapped_column(ForeignKey("schools.id"),primary_key=True); payload:Mapped[dict]=mapped_column(JSON,default=dict); updated_at:Mapped[str]=mapped_column(String(40))
 Base.metadata.create_all(engine)
 def dbdep():
  d=SessionLocal()
@@ -73,7 +75,8 @@ def login(x:Login,d:Session=Depends(dbdep)):
  if not u or not pwd.verify(x.password,u.password_hash): raise HTTPException(401,"Incorrect login")
  return {"access_token":make_token(u),"user":{"name":u.name,"role":u.role}}
 @app.get("/api/v1/me")
-def me(u=Depends(current)): return {"id":u.id,"school_id":u.school_id,"name":u.name,"role":u.role}
+def me(u=Depends(current),d:Session=Depends(dbdep)):
+ s=d.get(School,u.school_id); return {"id":u.id,"school_id":u.school_id,"school_name":s.name if s else "", "name":u.name,"role":u.role}
 @app.get("/api/v1/dashboard")
 def dashboard(d:Session=Depends(dbdep),u=Depends(current)):
  s=u.school_id; return {"learners":d.query(Learner).filter_by(school_id=s).count(),"exams":d.query(Exam).filter_by(school_id=s).count(),"questions":d.query(Question).filter_by(school_id=s).count(),"assignments":d.query(Assignment).filter_by(school_id=s).count()}
@@ -177,3 +180,17 @@ def export(d:Session=Depends(dbdep),u=Depends(current)):
 @app.post("/api/v1/ai/questions/generate")
 def generate(data:dict,u=Depends(roles("SCHOOL_ADMIN","TEACHER"))):
  return {"configured":False,"message":"Configure an approved AI API adapter and server-side key; all generated questions require teacher review.","prompt_preview":f"Generate {data.get('count',10)} questions for {data.get('curriculum')} {data.get('level')} {data.get('subject')} on {data.get('topic')}."}
+
+@app.get("/api/v1/legacy/state")
+def get_legacy_state(d:Session=Depends(dbdep),u=Depends(current)):
+ row=d.get(LegacyState,u.school_id)
+ return {"payload":row.payload if row else None,"updated_at":row.updated_at if row else None}
+@app.put("/api/v1/legacy/state")
+def put_legacy_state(data:dict,d:Session=Depends(dbdep),u=Depends(current)):
+ payload=data.get("payload")
+ if not isinstance(payload,dict): raise HTTPException(400,"payload must be an object")
+ if len(str(payload).encode("utf-8"))>3_000_000: raise HTTPException(413,"School workspace exceeds 3 MB; upload large files separately")
+ row=d.get(LegacyState,u.school_id); now=datetime.datetime.now(datetime.timezone.utc).isoformat()
+ if row is None: row=LegacyState(school_id=u.school_id,payload=payload,updated_at=now); d.add(row)
+ else: row.payload=payload; row.updated_at=now
+ d.commit(); return {"saved":True,"updated_at":now}
