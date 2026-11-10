@@ -1,0 +1,9 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE TABLE IF NOT EXISTS schools(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),name TEXT NOT NULL,code TEXT UNIQUE NOT NULL);
+CREATE TABLE IF NOT EXISTS users(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),name TEXT NOT NULL,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'TEACHER');
+CREATE TABLE IF NOT EXISTS classes(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),name TEXT NOT NULL,curriculum TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS learners(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),admission_number TEXT NOT NULL,first_name TEXT NOT NULL,last_name TEXT,gender TEXT,guardian_phone TEXT,UNIQUE(school_id,admission_number));
+CREATE TABLE IF NOT EXISTS exams(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),title TEXT NOT NULL,curriculum TEXT NOT NULL,duration INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'DRAFT');
+CREATE TABLE IF NOT EXISTS questions(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),curriculum TEXT NOT NULL,subject TEXT NOT NULL,topic TEXT,kind TEXT NOT NULL,prompt TEXT NOT NULL,options JSONB,answer_key JSONB,marks NUMERIC NOT NULL,approved BOOLEAN NOT NULL DEFAULT FALSE);
+CREATE TABLE IF NOT EXISTS attempts(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),exam_id UUID NOT NULL REFERENCES exams(id),learner_id UUID NOT NULL REFERENCES learners(id),status TEXT NOT NULL DEFAULT 'IN_PROGRESS',score NUMERIC,maximum NUMERIC);
+CREATE TABLE IF NOT EXISTS assignments(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),school_id UUID NOT NULL REFERENCES schools(id),title TEXT NOT NULL,category TEXT NOT NULL,description TEXT);
