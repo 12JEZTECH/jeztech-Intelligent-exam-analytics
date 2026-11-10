@@ -14,7 +14,7 @@ services:
       - key: DATABASE_URL
         value: sqlite:///./jeztech.db
       - key: CORS_ORIGINS
-        value: https://jeztech-intelligent-exam-analytics.onrender.com
+        value: https://jeztech-intelligent-exam-analytics-d7lj.onrender.com
   - type: web
     name: jeztech-intelligent-exam-analytics
     runtime: static
