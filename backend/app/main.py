@@ -63,7 +63,7 @@ class QuestionIn(BaseModel):
 def health(): return {"status":"ok"}
 @app.post("/api/v1/auth/register")
 def register(x:Register,d:Session=Depends(dbdep)):
- if os.getenv("APP_ENV")=="production": raise HTTPException(403,"Use secure administrator provisioning in production")
+ if os.getenv("APP_ENV")=="production" and d.query(User).count()>0: raise HTTPException(403,"Initial administrator already provisioned; contact your platform administrator.")
  if d.query(User).filter_by(email=x.email).first(): raise HTTPException(409,"Email exists")
  s=School(name=x.school_name,code=x.school_code); d.add(s); d.flush(); u=User(school_id=s.id,name=x.name,email=x.email,password_hash=pwd.hash(x.password),role="SCHOOL_ADMIN"); d.add(u); d.commit()
  return {"access_token":make_token(u),"user":{"name":u.name,"role":u.role}}
