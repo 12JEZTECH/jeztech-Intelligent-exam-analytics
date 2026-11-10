@@ -134,6 +134,8 @@ button, select, input, textarea { transition: all 0.15s ease; }
 .disc-major { background: #fed7aa; color: #9a3412; }
 .disc-severe { background: #fee2e2; color: #991b1b; }
 .disc-resolved { background: #dcfce7; color: #14532d; }
+/* The v15 shell uses the authenticated parent application session. */
+#loginScreen .p-6 > div:nth-of-type(2),#loginScreen .p-6 > div:nth-of-type(3),#loginScreen .p-6 > div:nth-of-type(4),#loginScreen .p-6 > div:nth-of-type(6){display:none!important}
 </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
@@ -147,11 +149,11 @@ button, select, input, textarea { transition: all 0.15s ease; }
 <p class="text-xs text-blue-200 mt-1">v15.0 · CBE & 8-4-4 Integrated Assessment Platform</p>
 </div>
 <div class="p-6 space-y-4">
-<div class="text-center"><h2 class="text-lg font-bold text-slate-900">Sign in to your account</h2><p class="text-xs text-slate-500 mt-1">Use credentials provided by your administrator</p></div>
+<div class="text-center"><h2 class="text-lg font-bold text-slate-900">Sign in to your account</h2><p class="text-xs text-slate-500 mt-1">Your school account is already signed in. Connect to its cloud workspace.</p></div>
 <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Username</label><div class="relative"><i class="fa-solid fa-user absolute left-3 top-3 text-slate-400 text-sm"></i><input type="text" id="loginUsername" placeholder="e.g. dos.kamau" class="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-jez-500"></div></div>
 <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Password</label><div class="relative"><i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400 text-sm"></i><input type="password" id="loginPassword" placeholder="••••••••" class="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-jez-500"><button onclick="togglePassword()" class="absolute right-3 top-2.5 text-slate-400"><i class="fa-solid fa-eye text-sm" id="pwToggleIcon"></i></button></div></div>
 <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Level</label><select id="loginLevel" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm"><option value="primary">Primary</option><option value="lowersec">Lower Secondary</option><option value="uppersec">Upper Secondary</option><option value="advanced">Advanced</option><option value="all">All Levels</option></select></div>
-<button onclick="handleLogin()" class="w-full py-3 bg-jez-500 hover:bg-jez-600 text-white rounded-lg font-bold text-sm shadow-lg"><i class="fa-solid fa-right-to-bracket mr-2"></i>Sign In</button>
+<button onclick="handleLogin()" class="w-full py-3 bg-jez-500 hover:bg-jez-600 text-white rounded-lg font-bold text-sm shadow-lg"><i class="fa-solid fa-cloud-arrow-down mr-2"></i>Connect to School Workspace</button>
 <div class="pt-3 border-t border-slate-100">
 <p class="text-[10px] text-slate-400 uppercase font-bold mb-2 text-center">Demo Credentials — Click to auto-fill</p>
 <div class="grid grid-cols-2 gap-2 text-[10px]">
