@@ -1641,13 +1641,16 @@ async function loadSchoolWorkspace() {
   const response=await fetch('https://jeztech-intelligent-exam-analytics-api.onrender.com/api/v1/legacy/state',{headers:{Authorization:'Bearer '+token}});
   if(!response.ok) throw new Error('Could not load the school workspace');
   const result=await response.json();
+  const meResponse=await fetch('https://jeztech-intelligent-exam-analytics-api.onrender.com/api/v1/me',{headers:{Authorization:'Bearer '+token}});
+  if(!meResponse.ok) throw new Error('Sign in again to load the school workspace');
+  const account=await meResponse.json();
   if(result.payload && typeof result.payload==='object') {
     DB={...DB,...result.payload};
   } else {
     // Never seed a real school's workspace with the sample learners and demo marks.
     ['users','teachers','students','exams','classes','subjectAssignments','practicals','rooms','clipProjects','parents','disciplineRecords','onlineExams','manualSubmissions'].forEach(key=>DB[key]=[]);
     DB.marksData={};
-    DB.school={...(DB.school||{}),name:'School workspace'};
+    DB.school={name:account.school_name||'School workspace',phone:'',email:'',address:'',motto:'',logoUrl:null,paybill:''};
     saveDB(DB);
   }
   localStorage.setItem(DB_KEY,JSON.stringify(DB));
