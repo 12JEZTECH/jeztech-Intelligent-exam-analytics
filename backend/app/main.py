@@ -57,7 +57,7 @@ app.add_middleware(CORSMiddleware,allow_origins=os.getenv("CORS_ORIGINS","http:/
 class Register(BaseModel):
  school_name:str; school_code:str; name:str; email:str; password:str=Field(min_length=10); curriculum:str="CBC"
 class Login(BaseModel): email:str; password:str
-class UserCreate(BaseModel): name:str=Field(min_length=2,max_length=200); email:str; password:str=Field(min_length=10,max_length=128); role:str="TEACHER"
+class UserCreate(BaseModel): name:str=Field(min_length=2,max_length=200); email:str; password:str=Field(min_length=10,max_length=72); role:str="TEACHER"
 class LearnerIn(BaseModel): admission_number:str; first_name:str; last_name:str=""; gender:str=""; guardian_phone:str=""
 class ExamIn(BaseModel): title:str; curriculum:str; duration:int=Field(60,ge=1,le=360)
 class QuestionIn(BaseModel):
