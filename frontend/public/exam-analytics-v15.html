@@ -1721,15 +1721,10 @@ function createBackup() {
   showToast('Backup downloaded successfully!');
 }
 function autoBackup() {
-  const ts = new Date().toISOString();
-  const key = `backup_${Date.now()}`;
-  const backups = JSON.parse(localStorage.getItem(BACKUP_KEY) || '[]');
-  backups.push({ key, timestamp: ts, size: JSON.stringify(DB).length });
-  while (backups.length > 10) backups.shift();
-  localStorage.setItem(BACKUP_KEY, JSON.stringify(backups));
-  addBackupHistory(`Auto-backup created at ${ts}`);
-  showToast('Auto-backup saved locally!');
+  createBackup();
+  showToast('A complete JSON backup was downloaded. This is a browser download, not a scheduled off-site backup.', 'warn');
 }
+
 function addBackupHistory(msg) {
   const hist = document.getElementById('backupHistory');
   if (!hist) return;
@@ -3140,49 +3135,22 @@ function detectSubject() {
   const box = document.getElementById('subjectDetectionText');
   if (box) box.innerText = `Subject detected: ${subject}. Template will generate ${subject}-specific questions aligned to Bloom's Taxonomy.`;
 }
-function generateAIExam() {
-  const teacherId = document.getElementById('aiTeacher').value;
-  const teacher = DB.teachers.find(t => t.id === teacherId);
-  const preview = document.getElementById('aiExamPreview');
-  const count = parseInt(document.getElementById('aiExamCount').value);
-  const title = document.getElementById('aiExamTitle').value;
-  const subject = document.getElementById('aiExamSubject').value;
-  const type = document.getElementById('aiExamType').value;
-  const duration = document.getElementById('aiExamDuration').value;
-  const price = document.getElementById('aiExamPrice').value;
-  const difficulty = document.getElementById('aiDifficulty').value;
-  const bloom = document.getElementById('aiBloom').value;
-  preview.innerHTML = '<div class="flex items-center justify-center py-10"><div class="ai-loading"></div><p class="ml-3 text-sm text-fuchsia-700 font-bold">Generating ' + count + ' ' + subject + ' questions...</p></div>';
-  setTimeout(() => {
-    let html = `<div class="text-center mb-4 pb-3 border-b-2 border-slate-300"><h2 class="text-lg font-black text-slate-900 uppercase">Jeztech Exam Analytics</h2><p class="text-xs text-slate-600">${title} — ${subject} (${type})</p><p class="text-[10px] text-slate-500 mt-1">Duration: ${duration} min · ${count} questions · Difficulty: ${difficulty} · Bloom: ${bloom}</p></div><div class="space-y-3 text-xs">`;
-    const sampleQs = [
-      { q: `What is the value of x in 2x + 5 = 15? [${subject}]`, a: 'B. 10', opts: ['A. 5','B. 10','C. 7.5','D. 20'], diff: 'Easy', bloom: 'Remembering' },
-      { q: `Define the term 'photosynthesis'. [${subject}]`, a: 'Process of food making in plants', opts: ['A. Process of food making in plants','B. Process of breathing','C. Process of digestion','D. Process of evaporation'], diff: 'Medium', bloom: 'Understanding' },
-      { q: `Simplify: 3/4 + 1/2 [${subject}]`, a: 'C. 1 1/4', opts: ['A. 4/6','B. 5/4','C. 1 1/4','D. 1/2'], diff: 'Easy', bloom: 'Applying' },
-      { q: `State two properties of acids. [${subject}]`, a: 'Sour taste; turns litmus red', opts: ['A. Sour taste; turns litmus red','B. Bitter taste; slippery','C. Sweet taste; neutral','D. None'], diff: 'Medium', bloom: 'Analyzing' },
-      { q: `Evaluate the impact of climate change on Kenyan agriculture. [${subject}]`, a: 'Reduced rainfall and crop yields', opts: ['A. Increased yields','B. Reduced rainfall and crop yields','C. No impact','D. Only affects coastal areas'], diff: 'Hard', bloom: 'Evaluating' }
-    ];
-    const generatedQs = [];
-    for (let i = 0; i < count; i++) {
-      const q = sampleQs[i % sampleQs.length];
-      html += `<div class="p-3 bg-slate-50 rounded-lg border border-slate-200"><div class="flex items-center justify-between mb-2"><p class="font-bold text-slate-900"><strong>Q${i + 1}.</strong> ${q.q}</p><div class="flex space-x-1"><span class="text-[9px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">${q.diff}</span><span class="text-[9px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-bold">${q.bloom}</span></div></div><div class="ml-4 space-y-1 text-[11px]">${q.opts.map(o => `<p>${o}</p>`).join('')}</div><p class="mt-2 text-[10px] text-emerald-700 font-bold"><i class="fa-solid fa-check mr-1"></i>Answer: ${q.a}</p></div>`;
-      generatedQs.push({ id: i + 1, text: q.q, options: q.opts, correct: q.a, marks: Math.floor(100 / count), difficulty: q.diff, bloom: q.bloom });
-    }
-    html += '</div>';
-    preview.innerHTML = html;
-    DB.onlineExams.push({
-      id: 'oe' + Date.now(),
-      title, subject, level: document.getElementById('aiExamLevel').value,
-      type, duration: parseInt(duration), price: parseInt(price),
-      questions: generatedQs, published: false,
-      teacherId, teacherName: teacher ? teacher.name : null,
-      difficulty, bloom,
-      createdAt: new Date().toISOString()
-    });
-    saveDB(DB);
-    showToast(`Exam generated with ${count} questions!`);
-  }, 1200);
+async function generateAIExam() {
+  const preview=document.getElementById('aiExamPreview');
+  const token=localStorage.getItem('jz_token');
+  if(!token){showToast('Sign in to generate exam questions.','error');return;}
+  const payload={count:Number(document.getElementById('aiExamCount').value||10),title:document.getElementById('aiExamTitle').value,subject:document.getElementById('aiExamSubject').value,curriculum:DB.school?.curriculum||'CBC',level:document.getElementById('aiExamLevel').value,type:document.getElementById('aiExamType').value,duration:Number(document.getElementById('aiExamDuration').value||60),difficulty:document.getElementById('aiDifficulty').value,bloom:document.getElementById('aiBloom').value};
+  preview.innerHTML='<div class="p-4 text-sm text-slate-600">Checking AI service configuration…</div>';
+  try {
+    const response=await fetch(JEZTECH_API_BASE+'/api/v1/ai/questions/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.detail||'AI request failed');
+    if(!result.configured){preview.innerHTML='<div class="p-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-sm"><strong>AI generation is not configured.</strong><p class="mt-2">'+(result.message||'Configure an approved AI provider on the server before generating questions.')+'</p><p class="mt-2 text-xs">'+(result.prompt_preview||'')+'</p></div>';showToast('No sample questions were generated. Configure the AI provider first.','warn');return;}
+    preview.innerHTML='<div class="p-4 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 text-sm">AI provider responded. Review returned questions before adding them to an examination.</div>';
+    if(Array.isArray(result.questions))window.generatedAIQuestions=result.questions;
+  } catch(error) { preview.innerHTML='<div class="p-4 rounded-lg border border-rose-300 bg-rose-50 text-rose-900 text-sm">'+String(error.message||error)+'</div>';showToast('AI question generation failed: '+String(error.message||error),'error'); }
 }
+
 function printExamPDF() { window.print(); showToast('Exam PDF ready for download.'); }
 function publishExamOnline() {
   const lastExam = DB.onlineExams[DB.onlineExams.length - 1];
@@ -3919,15 +3887,10 @@ function batchPrintDiagnostics() { showToast('Batch printing diagnostics...'); s
 function triggerBulkSMS() {
   showToast('SMS provider is not configured. No messages were sent.', 'warn');
 }
-function triggerBulkWhatsApp() { 
-  const group = document.getElementById('smsGroup').value;
-  const count = DB.parents.filter(p => p.whatsappVerified).length;
-  showToast(`Bulk WhatsApp sent to ${count} parents (${group})`); 
+function triggerBulkWhatsApp() {
+  showToast('WhatsApp Business provider is not configured. No messages were sent.', 'warn');
 }
 
-// ============================================
-// SCHOOL PROFILE
-// ============================================
 function saveSchoolProfile() {
   DB.school.name = document.getElementById('schoolNameInput').value;
   DB.school.phone = document.getElementById('schoolPhoneInput').value;
