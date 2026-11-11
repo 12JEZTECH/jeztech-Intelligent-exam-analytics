@@ -57,6 +57,7 @@ app.add_middleware(CORSMiddleware,allow_origins=os.getenv("CORS_ORIGINS","http:/
 class Register(BaseModel):
  school_name:str; school_code:str; name:str; email:str; password:str=Field(min_length=10); curriculum:str="CBC"
 class Login(BaseModel): email:str; password:str
+class UserCreate(BaseModel): name:str=Field(min_length=2,max_length=200); email:str; password:str=Field(min_length=10,max_length=128); role:str="TEACHER"
 class LearnerIn(BaseModel): admission_number:str; first_name:str; last_name:str=""; gender:str=""; guardian_phone:str=""
 class ExamIn(BaseModel): title:str; curriculum:str; duration:int=Field(60,ge=1,le=360)
 class QuestionIn(BaseModel):
@@ -74,6 +75,18 @@ def login(x:Login,d:Session=Depends(dbdep)):
  u=d.query(User).filter_by(email=x.email).first()
  if not u or not pwd.verify(x.password,u.password_hash): raise HTTPException(401,"Incorrect login")
  return {"access_token":make_token(u),"user":{"name":u.name,"role":u.role}}
+@app.get("/api/v1/users")
+def list_users(d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","PRINCIPAL"))):
+ return [{"id":x.id,"name":x.name,"email":x.email,"role":x.role} for x in d.query(User).filter_by(school_id=u.school_id).order_by(User.name).all()]
+@app.post("/api/v1/users",status_code=201)
+def create_user(x:UserCreate,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN"))):
+ role=x.role.upper()
+ if role not in {"TEACHER","DOS","PRINCIPAL","SECRETARY","STUDENT","PARENT"}: raise HTTPException(400,"Unsupported account role")
+ email=x.email.strip().lower()
+ if d.query(User).filter_by(email=email).first(): raise HTTPException(409,"An account with this email already exists")
+ item=User(school_id=u.school_id,name=x.name.strip(),email=email,password_hash=pwd.hash(x.password),role=role)
+ d.add(item); d.commit(); d.refresh(item)
+ return {"id":item.id,"name":item.name,"email":item.email,"role":item.role}
 @app.get("/api/v1/me")
 def me(u=Depends(current),d:Session=Depends(dbdep)):
  s=d.get(School,u.school_id); return {"id":u.id,"school_id":u.school_id,"school_name":s.name if s else "", "name":u.name,"role":u.role}
