@@ -50,9 +50,12 @@ def test_school_registration_tenant_isolation_and_marks_workflow():
         roster = client.get("/api/papers/"+str(paper.json()["id"])+"/marks",headers=headers_a)
         assert roster.status_code == 200
         assert roster.json()[0]["score"] == 78
+        band = client.post("/api/grade-bands",headers=headers_a,json={"curriculum":"CBC","label":"MEETS_EXPECTATION","minimum_percent":70,"maximum_percent":100,"points":4,"descriptor":"Meets expectations"})
+        assert band.status_code == 201, band.text
         report = client.get("/api/reports/exam/"+str(exam.json()["id"]),headers=headers_a)
         assert report.status_code == 200
         assert report.json()[0]["percent"] == 78
+        assert report.json()[0]["grade"] == "MEETS_EXPECTATION"
 
         assert len(client.get("/api/learners",headers=headers_a).json()) == 1
         assert client.get("/api/learners",headers=headers_b).json() == []
