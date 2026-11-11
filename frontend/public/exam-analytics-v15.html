@@ -1337,8 +1337,8 @@ button, select, input, textarea { transition: all 0.15s ease; }
 <h3 class="text-base font-bold text-slate-900 mb-3"><i class="fa-solid fa-user-plus text-amber-600 mr-2"></i>Create User Account</h3>
 <form onsubmit="handleUserSubmit(event)" class="space-y-3 text-xs">
 <div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Full Name *</label><input type="text" id="userFullName" required class="w-full p-2 border border-slate-300 rounded-lg"></div>
-<div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Username *</label><input type="text" id="userUsername" required class="w-full p-2 border border-slate-300 rounded-lg font-mono"></div>
-<div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Password *</label><input type="text" id="userPassword" required value="pass123" class="w-full p-2 border border-slate-300 rounded-lg font-mono"></div>
+<div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Email / Login ID *</label><input type="email" id="userEmail" required autocomplete="username" placeholder="staff@school.ac.ke" class="w-full p-2 border border-slate-300 rounded-lg"></div>
+<div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Temporary Password *</label><input type="password" id="userPassword" required minlength="10" autocomplete="new-password" placeholder="At least 10 characters" class="w-full p-2 border border-slate-300 rounded-lg font-mono"><p class="text-[9px] text-slate-500 mt-1">Stored as a secure password hash by the school API. Share it securely and ask the user to change it.</p></div>
 <div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Role *</label><select id="userRole" required class="w-full p-2 border border-slate-300 rounded-lg"><option value="teacher">Teacher</option><option value="dos">DOS / HOD</option><option value="principal">Principal</option><option value="secretary">Secretary</option><option value="student">Student</option><option value="parent">Parent</option></select></div>
 <div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Level</label><select id="userLevel" class="w-full p-2 border border-slate-300 rounded-lg"><option value="primary">Primary</option><option value="lowersec">Lower Secondary</option><option value="uppersec">Upper Secondary</option><option value="advanced">Advanced</option><option value="all">All</option></select></div>
 <div class="flex justify-end space-x-2 pt-2"><button type="button" onclick="closeModal('userModal')" class="px-4 py-2 bg-slate-100 rounded-lg font-semibold">Cancel</button><button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded-lg font-semibold"><i class="fa-solid fa-save mr-1"></i>Create</button></div>
@@ -1453,9 +1453,9 @@ Your browser does not support video playback.
 <p class="text-xs text-emerald-100 mt-1">Pay KES <span id="paymentAmount">10</span></p>
 </div>
 <div class="p-5 space-y-3 text-xs">
-<div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center"><p class="text-[10px] text-slate-500 uppercase font-bold">Paybill Number</p><p class="text-2xl font-black text-slate-900">400200</p></div>
-<div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">M-PESA Phone</label><input type="tel" id="paymentPhone" value="+254789012345" class="w-full p-2 border border-slate-300 rounded-lg"></div>
-<div class="flex justify-end space-x-2 pt-2"><button onclick="closeModal('paymentModal')" class="px-4 py-2 bg-slate-100 rounded-lg font-semibold">Cancel</button><button onclick="processPayment()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold"><i class="fa-solid fa-lock mr-1"></i>Pay</button></div>
+<div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center"><p class="text-[10px] text-slate-500 uppercase font-bold">M-PESA Integration</p><p class="text-lg font-black text-amber-700">Awaiting Daraja setup</p><p class="text-[10px] text-slate-500 mt-1">No payment will be charged until the school connects its M-PESA Daraja credentials.</p></div>
+<div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">M-PESA Phone</label><input type="tel" id="paymentPhone" placeholder="07XXXXXXXX or 2547XXXXXXXX" class="w-full p-2 border border-slate-300 rounded-lg"></div>
+<div class="flex justify-end space-x-2 pt-2"><button onclick="closeModal('paymentModal')" class="px-4 py-2 bg-slate-100 rounded-lg font-semibold">Cancel</button><button onclick="processPayment()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold"><i class="fa-solid fa-clipboard-check mr-1"></i>Save Payment Request</button></div>
 </div>
 </div>
 </div>
@@ -1465,6 +1465,7 @@ Your browser does not support video playback.
 <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-5 my-8 relative">
 <button onclick="closeModal('scanUploadModal')" class="absolute top-3 right-3 text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>
 <h3 class="text-base font-bold text-slate-900 mb-3"><i class="fa-solid fa-camera text-blue-600 mr-2"></i>Upload Scanned Submission</h3>
+<div class="grid grid-cols-2 gap-3 mb-3"><div><label class="block text-[10px] font-bold mb-1">Student *</label><select id="scanStudent" class="w-full p-2 border rounded-lg text-xs" required></select></div><div><label class="block text-[10px] font-bold mb-1">Exam *</label><select id="scanExam" class="w-full p-2 border rounded-lg text-xs" required></select></div></div>
 <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center mb-3">
 <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-400 mb-2"></i>
 <p class="text-xs text-slate-500">Upload PDF or photos</p>
@@ -4009,6 +4010,207 @@ function closeMarking() {
 }
 function openScanUploadModal() { openModal('scanUploadModal'); }
 function handleScanUpload(e) { if (e.target.files[0]) showToast('File uploaded. Teacher will review.'); }
+
+// ============================================
+ // RELIABLE MODAL WORKFLOWS / VALIDATION
+ // ============================================
+function modalOptions(id, rows, valueFn, labelFn, placeholder) {
+  const el=document.getElementById(id); if(!el) return;
+  const current=el.value;
+  el.innerHTML=(placeholder?'<option value="">'+placeholder+'</option>':'')+rows.map(x=>'<option value="'+String(valueFn(x)).replace(/"/g,'&quot;')+'">'+String(labelFn(x)).replace(/</g,'&lt;')+'</option>').join('');
+  if(rows.some(x=>String(valueFn(x))===current)) el.value=current;
+}
+function refreshModalChoices(){
+  const students=DB.students||[], teachers=DB.teachers||[], exams=DB.exams||[];
+  modalOptions('discStudent',students,s=>s.adm,s=>s.adm+' — '+s.name,'Select learner');
+  modalOptions('parentStudents',students,s=>s.adm,s=>s.adm+' — '+s.name,null);
+  modalOptions('scanStudent',students,s=>s.adm,s=>s.adm+' — '+s.name,'Select learner');
+  modalOptions('scanExam',exams,e=>e.id,e=>e.name,'Select exam');
+  modalOptions('classTeacher',teachers,t=>t.id,t=>t.name,'Unassigned');
+  modalOptions('subjectTeacher',teachers,t=>t.id,t=>t.name,'Unassigned');
+  modalOptions('paperTeacher',teachers,t=>t.id,t=>t.name,'Unassigned');
+  modalOptions('mapExamSelect',exams,e=>e.id,e=>e.name,'Select exam');
+}
+function openModal(id){
+  const el=document.getElementById(id); if(!el)return;
+  refreshModalChoices(); el.classList.remove('hidden'); el.setAttribute('aria-hidden','false');
+  document.body.classList.add('overflow-hidden');
+  const focusable=el.querySelector('input:not([type=hidden]),select,textarea,button');
+  if(focusable) setTimeout(()=>focusable.focus(),30);
+}
+function closeModal(id){
+  const el=document.getElementById(id); if(!el)return;
+  el.classList.add('hidden'); el.setAttribute('aria-hidden','true');
+  if(!document.querySelector('.modal-overlay:not(.hidden)')) document.body.classList.remove('overflow-hidden');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const opened=[...document.querySelectorAll('.modal-overlay:not(.hidden)')];if(opened.length)closeModal(opened[opened.length-1].id);}});
+document.addEventListener('click',e=>{if(e.target.classList && e.target.classList.contains('modal-overlay'))closeModal(e.target.id);});
+function downloadWorkspaceBackup(label){
+  const payload={format:'JEZTECH_EXAM_ANALYTICS_BACKUP',version:15,createdAt:new Date().toISOString(),school:DB.school||{},data:DB};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='jeztech-v15-'+label+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  return a.download;
+}
+function createBackup(){
+  const name=downloadWorkspaceBackup('backup');
+  addBackupHistory('Manual backup downloaded: '+name);
+  showToast('Full school workspace backup downloaded.');
+}
+function autoBackup(){
+  const backups=JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]');
+  const item={key:'backup_'+Date.now(),timestamp:new Date().toISOString(),size:JSON.stringify(DB).length};
+  backups.push(item);while(backups.length>10)backups.shift();
+  localStorage.setItem(BACKUP_KEY,JSON.stringify(backups));
+  const name=downloadWorkspaceBackup('automatic');
+  addBackupHistory('Automatic backup downloaded: '+name);
+  showToast('Automatic backup downloaded. Store it securely off this device.');
+}
+async function restoreBackup(event){
+  const file=event.target.files&&event.target.files[0];if(!file)return;
+  if(file.size>5*1024*1024){showToast('Backup is larger than 5 MB. Use the database backup process.','error');event.target.value='';return;}
+  if(!confirm('Restore this backup? Current school workspace data will be replaced. A safety backup will be downloaded first.')){event.target.value='';return;}
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      const parsed=JSON.parse(e.target.result);
+      const data=parsed&&parsed.format==='JEZTECH_EXAM_ANALYTICS_BACKUP'?parsed.data:parsed;
+      if(!data||typeof data!=='object'||!Array.isArray(data.students)||!Array.isArray(data.teachers)||!Array.isArray(data.exams))throw new Error('This is not a valid JEZTECH v15 backup.');
+      downloadWorkspaceBackup('before-restore');
+      DB={...DB,...data};
+      saveDB(DB);
+      const token=localStorage.getItem('jz_token');
+      if(!token)throw new Error('Sign in again before restoring to the school cloud.');
+      const response=await fetch('https://jeztech-intelligent-exam-analytics-api.onrender.com/api/v1/legacy/state',{method:'PUT',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({payload:DB})});
+      if(!response.ok){const err=await response.json().catch(()=>({}));throw new Error(err.detail||'Cloud restore failed. Your local copy remains loaded.');}
+      localStorage.setItem(DB_KEY,JSON.stringify(DB));addBackupHistory('Backup restored: '+file.name);
+      closeModal('backupModal');renderAll();showToast('Backup restored and synchronised to school cloud.');
+    }catch(err){showToast(err.message||'Could not restore backup.','error');}
+    finally{event.target.value='';}
+  };
+  reader.onerror=()=>showToast('Could not read the selected backup file.','error');
+  reader.readAsText(file);
+}
+async function handleUserSubmit(e){
+  e.preventDefault();
+  const name=document.getElementById('userFullName').value.trim();
+  const email=document.getElementById('userEmail').value.trim().toLowerCase();
+  const password=document.getElementById('userPassword').value;
+  const role=document.getElementById('userRole').value.toUpperCase();
+  if(password.length<10){showToast('Use a password with at least 10 characters.','error');return;}
+  if((DB.users||[]).some(u=>u.email===email)){showToast('This email already exists in the user list.','error');return;}
+  try{
+    const token=localStorage.getItem('jz_token');
+    const response=await fetch('https://jeztech-intelligent-exam-analytics-api.onrender.com/api/v1/users',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({name,email,password,role})});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.detail||'Could not create account. Check administrator permission and email.');
+    DB.users.push({id:result.id,username:email,email,name,role:role.toLowerCase(),level:document.getElementById('userLevel').value,active:true});
+    saveDB(DB);renderUserTable();e.target.reset();closeModal('userModal');
+    showToast('Secure school login created. Password is stored as a hash.');
+  }catch(err){showToast(err.message||'Account creation failed.','error');}
+}
+async function processPayment(){
+  const phone=document.getElementById('paymentPhone').value.trim();
+  const amount=Number(document.getElementById('paymentAmount').innerText.replace(/,/g,''));
+  if(!/^(+?254|0)?7\d{8}$/.test(phone.replace(/\s|-/g,''))){showToast('Enter a valid Kenyan M-PESA phone number.','error');return;}
+  DB.subscriptionPaymentRequests=DB.subscriptionPaymentRequests||[];
+  const request={id:'pay_'+Date.now(),phone,amount,currency:'KES',status:'AWAITING_DARAJA_CONFIGURATION',createdAt:new Date().toISOString(),note:'No STK Push sent; Daraja credentials are not configured.'};
+  DB.subscriptionPaymentRequests.push(request);saveDB(DB);
+  showToast('Payment request saved. No money has been charged: M-PESA Daraja is not connected.','warn');
+  closeModal('paymentModal');
+}
+async function handleScanUpload(e){
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  if(file.size>2*1024*1024){showToast('Maximum scan size is 2 MB per file. Compress the scan or split it.','error');e.target.value='';return;}
+  const adm=document.getElementById('scanStudent').value,examId=document.getElementById('scanExam').value;
+  if(!adm||!examId){showToast('Select both a learner and an exam first.','error');e.target.value='';return;}
+  const student=DB.students.find(s=>s.adm===adm),exam=DB.exams.find(x=>x.id===examId);
+  const reader=new FileReader();
+  reader.onload=()=>{
+    DB.manualSubmissions=DB.manualSubmissions||[];
+    const questions=Array.isArray(exam.questions)?exam.questions.length:0;
+    DB.manualSubmissions.push({id:'scan_'+Date.now(),name:student?student.name:'',adm,exam:exam.name,examId,submitted:new Date().toLocaleString(),status:'PENDING',moderation:'PENDING_TEACHER_REVIEW',scores:Array(Math.max(1,questions)).fill(0),fileName:file.name,fileType:file.type||'application/octet-stream',fileSize:file.size,fileDataUrl:reader.result,uploadedAt:new Date().toISOString()});
+    saveDB(DB);renderManualMarking();closeModal('scanUploadModal');showToast('Scanned submission stored for teacher review.');e.target.value='';
+  };
+  reader.onerror=()=>showToast('Could not read scan file.','error');
+  reader.readAsDataURL(file);
+}
+function handleDisciplineSubmit(e){
+  e.preventDefault();const adm=document.getElementById('discStudent').value,student=DB.students.find(s=>s.adm===adm);
+  if(!student){showToast('Select a valid learner.','error');return;}
+  DB.disciplineRecords=DB.disciplineRecords||[];
+  DB.disciplineRecords.push({id:'d'+Date.now(),adm,name:student.name,className:student.className,date:document.getElementById('discDate').value,incident:document.getElementById('discDescription').value.trim(),severity:document.getElementById('discSeverity').value,action:document.getElementById('discAction').value,status:document.getElementById('discStatus').value});
+  saveDB(DB);renderDisciplineRecords();renderStudentTable();closeModal('disciplineModal');e.target.reset();showToast('Discipline record saved.');
+}
+function handleAddParent(e){
+  e.preventDefault();const phone=document.getElementById('parentPhone').value.trim();
+  if(!/^((\+?254)|0)7\d{8}$/.test(phone.replace(/[\s-]/g,''))){showToast('Enter a valid Kenyan mobile number.','error');return;}
+  const selected=[...document.getElementById('parentStudents').selectedOptions].map(o=>o.value);
+  if(!selected.length){showToast('Link at least one learner.','error');return;}
+  DB.parents=DB.parents||[];DB.parents.push({id:'par'+Date.now(),name:document.getElementById('parentName').value.trim(),phone,email:document.getElementById('parentEmail').value.trim(),students:selected,whatsappVerified:false,deliveryRoute:'manual'});
+  saveDB(DB);renderParentRouting();closeModal('addParentModal');e.target.reset();showToast('Parent contact saved. WhatsApp is not marked verified until an actual verification flow is connected.');
+}
+function handleAddClass(e){
+  e.preventDefault();const grade=document.getElementById('classGrade').value.trim(),stream=document.getElementById('classStream').value.trim();
+  if(DB.classes.some(c=>c.grade.toLowerCase()===grade.toLowerCase()&&c.stream.toLowerCase()===stream.toLowerCase())){showToast('This class and stream already exists.','error');return;}
+  DB.classes.push({id:'c'+Date.now(),grade,stream,teacherId:document.getElementById('classTeacher').value,learners:0});
+  saveDB(DB);renderClassesAndSubjects();initGlobalClassFilter();closeModal('addClassModal');e.target.reset();showToast('Class and stream added.');
+}
+function handleAddSubject(e){
+  e.preventDefault();const subject=document.getElementById('subjectName').value.trim(),code=document.getElementById('subjectCode').value.trim();
+  if(DB.subjectAssignments.some(x=>x.code.toLowerCase()===code.toLowerCase()||x.subject.toLowerCase()===subject.toLowerCase())){showToast('Subject name or code already exists.','error');return;}
+  DB.subjectAssignments.push({subject,code,teacherId:document.getElementById('subjectTeacher').value});
+  saveDB(DB);renderClassesAndSubjects();closeModal('addSubjectModal');e.target.reset();showToast('Subject added.');
+}
+function handleAddPaper(e){
+  e.preventDefault();const exam=DB.exams.find(x=>x.id===activeExamId);if(!exam){showToast('Select an exam before adding a paper.','error');return;}
+  exam.papers=exam.papers||[];const subject=document.getElementById('paperSubject').value;
+  if(exam.papers.some(p=>p.subject===subject)){showToast('This paper is already on the exam.','error');return;}
+  exam.papers.push({subject,totalMarks:Number(document.getElementById('paperTotalMarks').value),duration:Number(document.getElementById('paperDuration').value),instructions:document.getElementById('paperInstructions').value,teacherId:document.getElementById('paperTeacher').value});
+  saveDB(DB);loadPapersForExam(activeExamId);closeModal('addPaperModal');e.target.reset();showToast('Paper added to exam.');
+}
+function handleCreateRoom(e){
+  e.preventDefault();const name=document.getElementById('roomName').value.trim(),capacity=Number(document.getElementById('roomCapacity').value);
+  if(DB.rooms.some(r=>r.name.toLowerCase()===name.toLowerCase())){showToast('A room with this name already exists.','error');return;}
+  if(!Number.isFinite(capacity)||capacity<1){showToast('Enter a valid room capacity.','error');return;}
+  DB.rooms.push({id:'r'+Date.now(),name,level:document.getElementById('roomLevel').value,capacity,supervisor:document.getElementById('roomSupervisor').value.trim(),description:document.getElementById('roomDescription').value.trim(),mappedExams:[]});
+  saveDB(DB);renderRooms();closeModal('createRoomModal');e.target.reset();showToast('Room created.');
+}
+function handleMapExamToRoom(e){
+  e.preventDefault();const room=DB.rooms.find(r=>r.id===activeRoomId),examId=document.getElementById('mapExamSelect').value;
+  if(!room){showToast('Select a room before mapping an exam.','error');return;}
+  if(room.mappedExams.some(x=>x.examId===examId)){showToast('This exam is already mapped to the selected room.','error');return;}
+  room.mappedExams.push({examId,dateTime:document.getElementById('mapExamDateTime').value,questionBank:document.getElementById('mapQuestionBank').value,pastExam:document.getElementById('mapPastExam').value,practical:document.getElementById('mapPractical').value});
+  saveDB(DB);openRoomDetail(activeRoomId);closeModal('mapExamToRoomModal');showToast('Exam mapped to room.');
+}
+function handleCreateExam(e){
+  e.preventDefault();const name=document.getElementById('examName').value.trim(),year=Number(document.getElementById('examYear').value);
+  if(DB.exams.some(x=>x.name.toLowerCase()===name.toLowerCase()&&x.year===year)){showToast('An exam with this name and year already exists.','error');return;}
+  DB.exams.push({id:'e'+Date.now(),name,term:document.getElementById('examTerm').value,year,type:document.getElementById('examType').value,grading:document.getElementById('examGrading').value,passMark:Number(document.getElementById('examPassMark').value),papers:[]});
+  saveDB(DB);renderExamList2();closeModal('createExamModal');e.target.reset();showToast('Exam created.');
+}
+function handleStudentSubmit(e){
+  e.preventDefault();const adm=document.getElementById('studentAdm').value.trim(),name=document.getElementById('studentName').value.trim();
+  if(DB.students.some(s=>s.adm.toLowerCase()===adm.toLowerCase()&&s.id!==editStudentId)){showToast('Admission number already exists.','error');return;}
+  const streamFull=document.getElementById('studentStream').value.trim();
+  const known=[...DB.classes].sort((a,b)=>(b.grade||'').length-(a.grade||'').length);
+  const match=known.find(c=>streamFull.toLowerCase().startsWith((c.grade+' '+c.stream).toLowerCase())||streamFull.toLowerCase()===c.grade.toLowerCase());
+  let className,stream;
+  if(match){className=match.grade;stream=match.stream||'';}else{const parts=streamFull.split(/\s+/);className=parts.shift()||'';stream=parts.join(' ');}
+  const data={adm,name,gender:document.getElementById('studentGender').value,curriculum:document.getElementById('studentCurriculum').value,level:document.getElementById('studentLevel').value,stream,className,parentPhone:document.getElementById('studentParentPhone').value.trim(),health:document.getElementById('studentHealth').value.trim()||'None',feesTotal:Number(document.getElementById('studentFeesTotal').value)||0,fees:Number(document.getElementById('studentFees').value)||0};
+  if(editStudentId){const i=DB.students.findIndex(s=>s.id===editStudentId);if(i>=0)DB.students[i]={...DB.students[i],...data};}else DB.students.push({id:'s'+Date.now(),...data});
+  saveDB(DB);renderStudentTable();closeModal('studentModal');editStudentId=null;e.target.reset();showToast('Learner record saved.');
+}
+function handleTeacherSubmit(e){
+  e.preventDefault();const tsc=document.getElementById('teacherTSC').value.trim(),name=document.getElementById('teacherName').value.trim();
+  if(DB.teachers.some(t=>t.tsc.toLowerCase()===tsc.toLowerCase()&&t.id!==editTeacherId)){showToast('TSC number already exists.','error');return;}
+  const subjects=document.getElementById('teacherSubjects').value.split(',').map(x=>x.trim()).filter(Boolean);
+  const data={tsc,name,username:document.getElementById('teacherUsername').value.trim(),email:document.getElementById('teacherEmail').value.trim(),phone:document.getElementById('teacherPhone').value.trim(),subjects,primarySubject:subjects[0]||'General',level:document.getElementById('teacherLevel').value,role:document.getElementById('teacherRole').value};
+  if(editTeacherId){const i=DB.teachers.findIndex(t=>t.id===editTeacherId);if(i>=0)DB.teachers[i]={...DB.teachers[i],...data};}else DB.teachers.push({id:'t'+Date.now(),...data});
+  saveDB(DB);renderTeacherTable();initMarksEntryTab();initAIExamTab();closeModal('teacherModal');editTeacherId=null;e.target.reset();showToast('Teacher record saved. Create a separate secure login from User Accounts if required.');
+}
+function handleAddSubject(e){e.preventDefault();const subject=document.getElementById('subjectName').value.trim(),code=document.getElementById('subjectCode').value.trim();if(DB.subjectAssignments.some(x=>x.code.toLowerCase()===code.toLowerCase()||x.subject.toLowerCase()===subject.toLowerCase())){showToast('Subject name or code already exists.','error');return;}DB.subjectAssignments.push({subject,code,teacherId:document.getElementById('subjectTeacher').value});saveDB(DB);renderClassesAndSubjects();closeModal('addSubjectModal');e.target.reset();showToast('Subject added.');}
 
 // ============================================
 // MOBILE SIDEBAR
