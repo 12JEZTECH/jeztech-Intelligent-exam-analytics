@@ -95,6 +95,17 @@ class Mark(Base):
     entered_by:Mapped[int]=mapped_column(ForeignKey("users.id"))
     updated_at:Mapped[datetime]=mapped_column(DateTime,default=datetime.utcnow,onupdate=datetime.utcnow)
     __table_args__=(UniqueConstraint("school_id","paper_id","learner_id",name="uq_mark_learner_paper"),)
+class GradeBand(Base):
+    __tablename__="grade_bands"
+    id:Mapped[int]=mapped_column(primary_key=True)
+    school_id:Mapped[int]=mapped_column(ForeignKey("schools.id",ondelete="CASCADE"),index=True)
+    curriculum:Mapped[str]=mapped_column(String(20))
+    label:Mapped[str]=mapped_column(String(30))
+    minimum_percent:Mapped[float]=mapped_column(Float)
+    maximum_percent:Mapped[float]=mapped_column(Float)
+    points:Mapped[float|None]=mapped_column(Float,nullable=True)
+    descriptor:Mapped[str|None]=mapped_column(String(120),nullable=True)
+    __table_args__=(UniqueConstraint("school_id","curriculum","label",name="uq_grade_band_label"),)
 class AuditLog(Base):
     __tablename__="audit_logs"
     id:Mapped[int]=mapped_column(primary_key=True)
@@ -272,3 +283,27 @@ def paper_marks(paper_id:int,db:Session=Depends(dbdep),u:User=Depends(current_us
     if not paper: raise HTTPException(404,"Paper not found")
     rows=db.query(Learner,Mark).outerjoin(Mark,(Mark.learner_id==Learner.id)&(Mark.paper_id==paper.id)&(Mark.school_id==u.school_id)).filter(Learner.school_id==u.school_id,Learner.class_id==paper.class_id,Learner.status=="ACTIVE").order_by(Learner.admission_number).all()
     return [{"learner_id":l.id,"admission_number":l.admission_number,"learner":l.first_name+" "+l.last_name,"score":m.score if m else None,"max_score":paper.max_score} for l,m in rows]
+
+class GradeBandIn(BaseModel):
+    curriculum:str=Field(pattern=r"^(CBC|844)$")
+    label:str=Field(min_length=1,max_length=30)
+    minimum_percent:float=Field(ge=0,le=100)
+    maximum_percent:float=Field(ge=0,le=100)
+    points:float|None=None
+    descriptor:str|None=None
+
+@app.get("/api/grade-bands")
+def list_grade_bands(curriculum:str|None=None,db:Session=Depends(dbdep),u:User=Depends(current_user)):
+    q=db.query(GradeBand).filter_by(school_id=u.school_id)
+    if curriculum: q=q.filter_by(curriculum=curriculum)
+    return q.order_by(GradeBand.curriculum,GradeBand.minimum_percent.desc()).all()
+
+@app.post("/api/grade-bands",status_code=201)
+def create_grade_band(data:GradeBandIn,db:Session=Depends(dbdep),u:User=Depends(roles("SCHOOL_ADMIN","PRINCIPAL","DOS"))):
+    if data.minimum_percent>data.maximum_percent: raise HTTPException(422,"Minimum percentage cannot exceed maximum")
+    overlap=db.query(GradeBand).filter(GradeBand.school_id==u.school_id,GradeBand.curriculum==data.curriculum,GradeBand.minimum_percent<=data.maximum_percent,GradeBand.maximum_percent>=data.minimum_percent).first()
+    if overlap: raise HTTPException(409,"This percentage range overlaps an existing grade band")
+    row=GradeBand(school_id=u.school_id,**data.model_dump());db.add(row)
+    try: db.commit();db.refresh(row)
+    except IntegrityError: db.rollback();raise HTTPException(409,"Grade label already exists for this curriculum")
+    return row
