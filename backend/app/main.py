@@ -265,3 +265,10 @@ def report(exam_id:int,db:Session=Depends(dbdep),u:User=Depends(current_user)):
     if not exam: raise HTTPException(404,"Exam not found")
     rows=db.query(Learner,Mark,ExamPaper,Subject,ClassGroup).join(Mark,Mark.learner_id==Learner.id).join(ExamPaper,ExamPaper.id==Mark.paper_id).join(Subject,Subject.id==ExamPaper.subject_id).join(ClassGroup,ClassGroup.id==Learner.class_id).filter(Mark.school_id==u.school_id,ExamPaper.exam_id==exam_id).all()
     return [{"admission":l.admission_number,"learner":l.first_name+" "+l.last_name,"class":c.name,"subject":s.name,"score":m.score,"maximum":p.max_score,"percent":round(m.score/p.max_score*100,2)} for l,m,p,s,c in rows]
+
+@app.get("/api/papers/{paper_id}/marks")
+def paper_marks(paper_id:int,db:Session=Depends(dbdep),u:User=Depends(current_user)):
+    paper=db.query(ExamPaper).filter_by(id=paper_id,school_id=u.school_id).first()
+    if not paper: raise HTTPException(404,"Paper not found")
+    rows=db.query(Learner,Mark).outerjoin(Mark,(Mark.learner_id==Learner.id)&(Mark.paper_id==paper.id)&(Mark.school_id==u.school_id)).filter(Learner.school_id==u.school_id,Learner.class_id==paper.class_id,Learner.status=="ACTIVE").order_by(Learner.admission_number).all()
+    return [{"learner_id":l.id,"admission_number":l.admission_number,"learner":l.first_name+" "+l.last_name,"score":m.score if m else None,"max_score":paper.max_score} for l,m in rows]
