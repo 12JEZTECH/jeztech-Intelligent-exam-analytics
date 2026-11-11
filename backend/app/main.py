@@ -275,7 +275,12 @@ def report(exam_id:int,db:Session=Depends(dbdep),u:User=Depends(current_user)):
     exam=db.query(Exam).filter_by(id=exam_id,school_id=u.school_id).first()
     if not exam: raise HTTPException(404,"Exam not found")
     rows=db.query(Learner,Mark,ExamPaper,Subject,ClassGroup).join(Mark,Mark.learner_id==Learner.id).join(ExamPaper,ExamPaper.id==Mark.paper_id).join(Subject,Subject.id==ExamPaper.subject_id).join(ClassGroup,ClassGroup.id==Learner.class_id).filter(Mark.school_id==u.school_id,ExamPaper.exam_id==exam_id).all()
-    return [{"admission":l.admission_number,"learner":l.first_name+" "+l.last_name,"class":c.name,"subject":s.name,"score":m.score,"maximum":p.max_score,"percent":round(m.score/p.max_score*100,2)} for l,m,p,s,c in rows]
+    output=[]
+    for l,m,p,subject,c in rows:
+        percent=round(m.score/p.max_score*100,2)
+        band=db.query(GradeBand).filter(GradeBand.school_id==u.school_id,GradeBand.curriculum==subject.curriculum,GradeBand.minimum_percent<=percent,GradeBand.maximum_percent>=percent).first()
+        output.append({"admission":l.admission_number,"learner":l.first_name+" "+l.last_name,"class":c.name,"subject":subject.name,"score":m.score,"maximum":p.max_score,"percent":percent,"grade":band.label if band else None,"grade_descriptor":band.descriptor if band else None})
+    return output
 
 @app.get("/api/papers/{paper_id}/marks")
 def paper_marks(paper_id:int,db:Session=Depends(dbdep),u:User=Depends(current_user)):
