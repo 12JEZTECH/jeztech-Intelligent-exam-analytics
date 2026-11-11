@@ -17,7 +17,7 @@ def test_school_registration_and_tenant_isolation():
                 "school_code": code,
                 "curriculum": "CBC",
                 "admin_name": "Test Administrator",
-                "email": "admin@example.test",
+                "email": "admin@example.com",
                 "password": "StrongTestPassword!2026"
             })
             assert response.status_code == 201, response.text
