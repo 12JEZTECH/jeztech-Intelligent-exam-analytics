@@ -1786,6 +1786,7 @@ function togglePassword() {
   else { pw.type = 'password'; icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
 }
 function handleLogin() {
+  if (!localStorage.getItem('jz_token')) { showToast('Sign in through your school JEZTECH account. Demo credentials are disabled in the hosted workspace.', 'error'); return; }
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
   const level = document.getElementById('loginLevel').value;
