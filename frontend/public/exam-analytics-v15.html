@@ -1357,8 +1357,8 @@ button, select, input, textarea { transition: all 0.15s ease; }
 <div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Full Name *</label><input type="text" id="teacherName" required placeholder="e.g. Grace Omondi" class="w-full p-2 border border-slate-300 rounded-lg"></div>
 </div>
 <div class="grid grid-cols-2 gap-3">
-<div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Username *</label><input type="text" id="teacherUsername" required placeholder="tchr.omondi" class="w-full p-2 border border-slate-300 rounded-lg font-mono"></div>
-<div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Password *</label><input type="text" id="teacherPassword" required value="teach123" class="w-full p-2 border border-slate-300 rounded-lg font-mono"></div>
+<div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Staff Reference</label><input type="text" id="teacherUsername" placeholder="Optional staff ID" class="w-full p-2 border border-slate-300 rounded-lg font-mono"></div>
+<div class="p-2 rounded-lg bg-blue-50 text-blue-800 text-[10px]">Login credentials are created separately under User Accounts and securely stored by the school API.</div>
 </div>
 <div class="grid grid-cols-2 gap-3">
 <div><label class="block font-bold text-slate-700 uppercase mb-1 text-[10px]">Email</label><input type="email" id="teacherEmail" placeholder="teacher@school.ac.ke" class="w-full p-2 border border-slate-300 rounded-lg"></div>
@@ -3514,7 +3514,7 @@ function openTeacherModal(id = null) {
   document.getElementById('teacherTSC').value = t ? t.tsc : '';
   document.getElementById('teacherName').value = t ? t.name : '';
   document.getElementById('teacherUsername').value = t ? (t.username || '') : '';
-  document.getElementById('teacherPassword').value = 'teach123';
+  // Staff login is provisioned separately through the secure User Accounts workflow.
   document.getElementById('teacherEmail').value = t ? (t.email || '') : '';
   document.getElementById('teacherPhone').value = t ? t.phone : '';
   document.getElementById('teacherSubjects').value = t ? t.subjects.join(', ') : '';
@@ -3962,7 +3962,7 @@ function renderManualMarking() {
   DB.manualSubmissions.forEach((s, i) => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50';
-    tr.innerHTML = `<td class="px-3 py-2 font-bold">${s.name}<br><span class="text-[9px] font-mono text-slate-500">${s.adm}</span></td><td class="px-3 py-2 text-[10px]">${s.exam}</td><td class="px-3 py-2 text-[10px]">${s.submitted}</td><td class="px-3 py-2 text-center"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${s.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${s.status}</span></td><td class="px-3 py-2 text-center"><span class="text-[9px] text-slate-500">${s.moderation || 'NONE'}</span></td><td class="px-3 py-2 text-right"><button onclick="openMarking(${i})" class="px-2 py-1 bg-orange-600 text-white rounded text-[10px] font-bold"><i class="fa-solid fa-pen mr-1"></i>Mark</button></td>`;
+    tr.innerHTML = `<td class="px-3 py-2 font-bold">${s.name}<br><span class="text-[9px] font-mono text-slate-500">${s.adm}</span></td><td class="px-3 py-2 text-[10px]">${s.exam}</td><td class="px-3 py-2 text-[10px]">${s.submitted}</td><td class="px-3 py-2 text-center"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${s.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${s.status}</span></td><td class="px-3 py-2 text-center"><span class="text-[9px] text-slate-500">${s.moderation || 'NONE'}</span></td><td class="px-3 py-2 text-right">\${s.fileDataUrl ? \`<button onclick="openSubmissionFile(\${i})" class="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-bold mr-1"><i class="fa-solid fa-file-arrow-down mr-1"></i>File</button>\` : ''}<button onclick="openMarking(\${i})" class="px-2 py-1 bg-orange-600 text-white rounded text-[10px] font-bold"><i class="fa-solid fa-pen mr-1"></i>Mark</button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -4120,9 +4120,17 @@ async function processPayment(){
   showToast('Payment request saved. No money has been charged: M-PESA Daraja is not connected.','warn');
   closeModal('paymentModal');
 }
-async function handleScanUpload(e){
+async function openSubmissionFile(index){
+  const item=DB.manualSubmissions[index];if(!item||!item.fileDataUrl){showToast('No uploaded file is attached.','warn');return;}
+  const w=window.open();if(!w){showToast('Allow pop-ups to preview this submission.','warn');return;}
+  const safeType=(item.fileType||'').toLowerCase();
+  if(safeType.startsWith('image/'))w.document.write('<img src="'+item.fileDataUrl+'" style="max-width:100%;height:auto">');
+  else if(safeType==='application/pdf')w.location.href=item.fileDataUrl;
+  else {w.document.write('<p>Preview is not available. Download the attachment instead.</p><a download="'+String(item.fileName||'submission').replace(/"/g,'')+'" href="'+item.fileDataUrl+'">Download file</a>');}
+}
+function handleScanUpload(e){
   const file=e.target.files&&e.target.files[0];if(!file)return;
-  if(file.size>2*1024*1024){showToast('Maximum scan size is 2 MB per file. Compress the scan or split it.','error');e.target.value='';return;}
+  if(file.size>1*1024*1024){showToast('Maximum scan size is 1 MB per file so it can be safely synchronised with the school workspace. Compress the scan or split it.','error');e.target.value='';return;}
   const adm=document.getElementById('scanStudent').value,examId=document.getElementById('scanExam').value;
   if(!adm||!examId){showToast('Select both a learner and an exam first.','error');e.target.value='';return;}
   const student=DB.students.find(s=>s.adm===adm),exam=DB.exams.find(x=>x.id===examId);
