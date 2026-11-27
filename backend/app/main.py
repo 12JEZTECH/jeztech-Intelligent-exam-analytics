@@ -212,3 +212,5 @@ def put_legacy_state(data:dict,d:Session=Depends(dbdep),u=Depends(current)):
 from . import analytics
 
 from . import demo_exams
+
+from . import exam_studio
