@@ -25,6 +25,7 @@ def assign(x:Assign,d:Session=Depends(dbdep),u=Depends(staff)):
     s=d.query(User).filter_by(id=x.student_id,school_id=u.school_id,role="STUDENT").first()
     p=d.query(GeneratedPaper).filter_by(id=x.paper_id,school_id=u.school_id).first()
     if not s or not p: raise HTTPException(404,"Student account or paper not found")
+    if p.payload.get("status")!="APPROVED": raise HTTPException(409,"Teacher must approve paper first")
     if d.query(LearningTask).filter_by(school_id=u.school_id,student_id=s.id,paper_id=p.id).first(): raise HTTPException(409,"Already assigned")
     t=LearningTask(school_id=u.school_id,student_id=s.id,paper_id=p.id,payload={"title":p.payload["subject"]+" — "+p.payload["topic"],"questions":p.payload["questions"],"minutes":x.minutes,"status":"ASSIGNED","answers":{}})
     d.add(t);d.commit();return {"id":t.id}
@@ -62,3 +63,9 @@ def submit(tid:str,d:Session=Depends(dbdep),u=Depends(student)):
 @app.get("/api/v1/learning/results")
 def results(d:Session=Depends(dbdep),u=Depends(staff)):
     return [{"student_id":t.student_id,**public(t)} for t in d.query(LearningTask).filter_by(school_id=u.school_id) if t.payload["status"]=="MARKED"]
+
+@app.post("/api/v1/learning/papers/{pid}/approve")
+def approve_paper(pid:str,d:Session=Depends(dbdep),u=Depends(staff)):
+    p=d.query(GeneratedPaper).filter_by(id=pid,school_id=u.school_id).first()
+    if not p: raise HTTPException(404,"Paper not found")
+    p.payload={**p.payload,"status":"APPROVED","reviewer":u.id};d.commit();return {"status":"APPROVED"}
