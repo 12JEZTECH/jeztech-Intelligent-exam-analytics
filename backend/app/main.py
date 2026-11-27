@@ -230,3 +230,5 @@ from . import grading
 from . import academic_management
 
 from . import report_cards
+
+from . import backups
