@@ -34,7 +34,11 @@ def public(t):
     return {"id":t.id,"title":p["title"],"minutes":p["minutes"],"status":p["status"],"deadline":p.get("deadline"),"answers":p.get("answers",{}),"score":p.get("score"),"maximum":p.get("maximum"),"questions":[{k:q[k] for k in ("id","prompt","options","marks")} for q in p["questions"]] if p["status"]=="STARTED" else []}
 @app.get("/api/v1/learning/tasks")
 def tasks(d:Session=Depends(dbdep),u=Depends(student)):
-    return [public(t) for t in d.query(LearningTask).filter_by(school_id=u.school_id,student_id=u.id)]
+    rows=d.query(LearningTask).filter_by(school_id=u.school_id,student_id=u.id).with_for_update().all()
+    for t in rows:
+        if t.payload["status"]=="STARTED" and now()>=datetime.datetime.fromisoformat(t.payload["deadline"]): finalize(t)
+    d.commit()
+    return [public(t) for t in rows]
 def own(d,u,tid):
     t=d.query(LearningTask).filter_by(id=tid,school_id=u.school_id,student_id=u.id).with_for_update().first()
     if not t: raise HTTPException(404,"Task not found")
@@ -58,8 +62,11 @@ def save(tid:str,x:Answers,d:Session=Depends(dbdep),u=Depends(student)):
 def submit(tid:str,d:Session=Depends(dbdep),u=Depends(student)):
     t=own(d,u,tid);p=t.payload
     if p["status"]!="STARTED": raise HTTPException(409,"Not active")
+    finalize(t);d.commit();return public(t)
+def finalize(t):
+    p=t.payload
     score=sum(q["marks"] for q in p["questions"] if p["answers"].get(q["id"])==q["answer"])
-    t.payload={**p,"status":"MARKED","score":score,"maximum":sum(q["marks"] for q in p["questions"])};d.commit();return public(t)
+    t.payload={**p,"status":"MARKED","score":score,"maximum":sum(q["marks"] for q in p["questions"])}
 @app.get("/api/v1/learning/results")
 def results(d:Session=Depends(dbdep),u=Depends(staff)):
     return [{"student_id":t.student_id,**public(t)} for t in d.query(LearningTask).filter_by(school_id=u.school_id) if t.payload["status"]=="MARKED"]
@@ -69,3 +76,7 @@ def approve_paper(pid:str,d:Session=Depends(dbdep),u=Depends(staff)):
     p=d.query(GeneratedPaper).filter_by(id=pid,school_id=u.school_id).first()
     if not p: raise HTTPException(404,"Paper not found")
     p.payload={**p.payload,"status":"APPROVED","reviewer":u.id};d.commit();return {"status":"APPROVED"}
+
+@app.get("/api/v1/learning/students")
+def student_accounts(d:Session=Depends(dbdep),u=Depends(staff)):
+    return [{"id":s.id,"name":s.name,"role":s.role} for s in d.query(User).filter_by(school_id=u.school_id,role="STUDENT")]
