@@ -94,7 +94,7 @@ def me(u=Depends(current),d:Session=Depends(dbdep)):
 def dashboard(d:Session=Depends(dbdep),u=Depends(current)):
  s=u.school_id; return {"learners":d.query(Learner).filter_by(school_id=s).count(),"exams":d.query(Exam).filter_by(school_id=s).count(),"questions":d.query(Question).filter_by(school_id=s).count(),"assignments":d.query(Assignment).filter_by(school_id=s).count()}
 @app.get("/api/v1/learners")
-def learners(d:Session=Depends(dbdep),u=Depends(current)):
+def learners(d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER","DOS","PRINCIPAL"))):
  return [dict(id=x.id,admission_number=x.admission_number,first_name=x.first_name,last_name=x.last_name,gender=x.gender,guardian_phone=x.guardian_phone) for x in d.query(Learner).filter_by(school_id=u.school_id).all()]
 @app.post("/api/v1/learners")
 def add_learner(x:LearnerIn,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER"))):
@@ -121,7 +121,7 @@ def exams(d:Session=Depends(dbdep),u=Depends(current)): return [dict(id=x.id,tit
 def add_exam(x:ExamIn,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER"))):
  y=Exam(school_id=u.school_id,**x.model_dump()); d.add(y); d.commit(); return {"id":y.id}
 @app.get("/api/v1/questions")
-def questions(d:Session=Depends(dbdep),u=Depends(current)): return [dict(id=q.id,prompt=q.prompt,kind=q.kind,subject=q.subject,curriculum=q.curriculum,marks=q.marks,approved=q.approved) for q in d.query(Question).filter_by(school_id=u.school_id).all()]
+def questions(d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER","DOS","PRINCIPAL"))): return [dict(id=q.id,prompt=q.prompt,kind=q.kind,subject=q.subject,curriculum=q.curriculum,marks=q.marks,approved=q.approved) for q in d.query(Question).filter_by(school_id=u.school_id).all()]
 @app.post("/api/v1/questions")
 def add_question(x:QuestionIn,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER"))):
  y=Question(school_id=u.school_id,approved=False,**x.model_dump()); d.add(y); d.commit(); return {"id":y.id,"status":"PENDING_REVIEW"}
@@ -141,12 +141,12 @@ def publish(eid:str,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN"))):
  if not e: raise HTTPException(404,"Exam not found")
  e.status="PUBLISHED"; d.commit(); return {"status":e.status}
 @app.post("/api/v1/exams/{eid}/attempts/{learner_id}")
-def start(eid:str,learner_id:str,d:Session=Depends(dbdep),u=Depends(current)):
+def start(eid:str,learner_id:str,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER","DOS","PRINCIPAL"))):
  e=d.query(Exam).filter_by(id=eid,school_id=u.school_id,status="PUBLISHED").first(); l=d.query(Learner).filter_by(id=learner_id,school_id=u.school_id).first()
  if not e or not l: raise HTTPException(404,"Exam or learner not found")
  a=Attempt(exam_id=eid,learner_id=learner_id,school_id=u.school_id); d.add(a); d.commit(); return {"attempt_id":a.id}
 @app.get("/api/v1/attempts/{aid}/paper")
-def paper(aid:str,d:Session=Depends(dbdep),u=Depends(current)):
+def paper(aid:str,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER","DOS","PRINCIPAL"))):
  a=d.query(Attempt).filter_by(id=aid,school_id=u.school_id).first()
  if not a: raise HTTPException(404,"Attempt not found")
  out=[]
@@ -154,7 +154,7 @@ def paper(aid:str,d:Session=Depends(dbdep),u=Depends(current)):
   q=d.get(Question,x.question_id); out.append(dict(id=q.id,prompt=q.prompt,kind=q.kind,options=q.options,marks=q.marks))
  return out
 @app.post("/api/v1/attempts/{aid}/answer/{qid}")
-def answer(aid:str,qid:str,data:dict,d:Session=Depends(dbdep),u=Depends(current)):
+def answer(aid:str,qid:str,data:dict,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER","DOS","PRINCIPAL"))):
  a=d.query(Attempt).filter_by(id=aid,school_id=u.school_id,status="IN_PROGRESS").first()
  if not a: raise HTTPException(404,"Attempt not active")
  old=d.query(Answer).filter_by(attempt_id=aid,question_id=qid).first()
@@ -162,7 +162,7 @@ def answer(aid:str,qid:str,data:dict,d:Session=Depends(dbdep),u=Depends(current)
  else: d.add(Answer(attempt_id=aid,question_id=qid,response=data))
  d.commit(); return {"saved":True}
 @app.post("/api/v1/attempts/{aid}/submit")
-def submit(aid:str,d:Session=Depends(dbdep),u=Depends(current)):
+def submit(aid:str,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER","DOS","PRINCIPAL"))):
  a=d.query(Attempt).filter_by(id=aid,school_id=u.school_id,status="IN_PROGRESS").first()
  if not a: raise HTTPException(404,"Attempt not active")
  score=0; maximum=0; manual=False
@@ -186,7 +186,7 @@ def queue(data:dict,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN"))):
  if ch not in ("SMS","WHATSAPP"): raise HTTPException(400,"Invalid channel")
  m=Message(school_id=u.school_id,channel=ch,recipient=data["recipient"],body=data["body"]); d.add(m); d.commit(); return {"id":m.id,"status":"QUEUED"}
 @app.get("/api/v1/reports/learners.csv")
-def export(d:Session=Depends(dbdep),u=Depends(current)):
+def export(d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER","DOS","PRINCIPAL"))):
  st=io.StringIO(); w=csv.writer(st); w.writerow(["Admission","First name","Last name","Gender","Phone"])
  for x in d.query(Learner).filter_by(school_id=u.school_id): w.writerow([x.admission_number,x.first_name,x.last_name,x.gender,x.guardian_phone])
  return StreamingResponse(iter([st.getvalue()]),media_type="text/csv",headers={"Content-Disposition":"attachment; filename=learners.csv"})
@@ -195,11 +195,11 @@ def generate(data:dict,u=Depends(roles("SCHOOL_ADMIN","TEACHER"))):
  return {"configured":False,"message":"Configure an approved AI API adapter and server-side key; all generated questions require teacher review.","prompt_preview":f"Generate {data.get('count',10)} questions for {data.get('curriculum')} {data.get('level')} {data.get('subject')} on {data.get('topic')}."}
 
 @app.get("/api/v1/legacy/state")
-def get_legacy_state(d:Session=Depends(dbdep),u=Depends(current)):
+def get_legacy_state(d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER","DOS","PRINCIPAL"))):
  row=d.get(LegacyState,u.school_id)
  return {"payload":row.payload if row else None,"updated_at":row.updated_at if row else None}
 @app.put("/api/v1/legacy/state")
-def put_legacy_state(data:dict,d:Session=Depends(dbdep),u=Depends(current)):
+def put_legacy_state(data:dict,d:Session=Depends(dbdep),u=Depends(roles("SCHOOL_ADMIN","TEACHER","DOS","PRINCIPAL"))):
  payload=data.get("payload")
  if not isinstance(payload,dict): raise HTTPException(400,"payload must be an object")
  if len(str(payload).encode("utf-8"))>3_000_000: raise HTTPException(413,"School workspace exceeds 3 MB; upload large files separately")
