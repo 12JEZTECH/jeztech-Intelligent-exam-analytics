@@ -220,3 +220,5 @@ from . import learning_portal
 from . import pathway
 
 from . import work_submissions
+
+from . import school_admin
