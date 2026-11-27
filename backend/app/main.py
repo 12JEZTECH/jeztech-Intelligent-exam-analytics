@@ -207,3 +207,6 @@ def put_legacy_state(data:dict,d:Session=Depends(dbdep),u=Depends(current)):
  if row is None: row=LegacyState(school_id=u.school_id,payload=payload,updated_at=now); d.add(row)
  else: row.payload=payload; row.updated_at=now
  d.commit(); return {"saved":True,"updated_at":now}
+
+# Register additive assessment analytics routes after core initialization.
+from . import analytics
