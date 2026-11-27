@@ -210,3 +210,5 @@ def put_legacy_state(data:dict,d:Session=Depends(dbdep),u=Depends(current)):
 
 # Register additive assessment analytics routes after core initialization.
 from . import analytics
+
+from . import demo_exams
