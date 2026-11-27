@@ -222,3 +222,5 @@ from . import pathway
 from . import work_submissions
 
 from . import school_admin
+
+from . import paper_exports
