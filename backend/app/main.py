@@ -214,3 +214,5 @@ from . import analytics
 from . import demo_exams
 
 from . import exam_studio
+
+from . import learning_portal
