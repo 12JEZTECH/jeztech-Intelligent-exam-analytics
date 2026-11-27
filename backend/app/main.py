@@ -226,3 +226,5 @@ from . import school_admin
 from . import paper_exports
 
 from . import grading
+
+from . import academic_management
