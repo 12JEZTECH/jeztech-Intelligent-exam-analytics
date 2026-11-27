@@ -224,3 +224,5 @@ from . import work_submissions
 from . import school_admin
 
 from . import paper_exports
+
+from . import grading
